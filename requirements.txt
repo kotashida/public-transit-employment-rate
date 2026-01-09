@@ -1,0 +1,10 @@
+pandas
+geopandas
+statsmodels
+linearmodels
+matplotlib
+seaborn
+requests
+tqdm
+folium
+pyarrow
