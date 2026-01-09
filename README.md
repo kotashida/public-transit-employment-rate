@@ -8,6 +8,7 @@ By leveraging **Difference-in-Differences (DiD)** estimation on high-granularity
 ## Key Quantitative Skills Demonstrated
 *   **Econometric Modeling:** Implementation of Difference-in-Differences (DiD) estimators to isolate causal effects from confounding variables.
 *   **Statistical Inference:** Hypothesis testing using Cluster-Robust Standard Errors to account for serial correlation and heteroskedasticity in panel data.
+*   **Robustness Testing:** Implementation of Placebo Tests (counterfactual validation) to confirm the internal validity of the DiD design.
 *   **Spatial Data Science:** Geographic manipulation using Coordinate Reference Systems (CRS) transformations, spatial joins, and geodesic buffering (800m vs 1600m radii) to define treatment/control groups.
 *   **Data Engineering:** Automated ETL pipeline construction to fetch, process, and aggregate multi-gigabyte census datasets (LODES) and TIGER/Line shapefiles.
 
@@ -35,6 +36,9 @@ $$ Employment_{it} = \beta_0 + \beta_1(Treat_i) + \beta_2(Post_t) + \beta_3(Trea
 *   **$eta_3$ (Interaction Term)**: The coefficient of interest, representing the **Average Treatment Effect on the Treated (ATT)**.
 
 *Standard errors were clustered by Block Group ID to ensure robust inference.*
+
+### 4. Robustness Check: Placebo Test
+To validate that the DiD model is not picking up a pre-existing trend, I conducted a **Placebo Test** by shifting the intervention date to 2015 (a period when no stations opened). A successful model should show an insignificant interaction term for the placebo year, confirming that the treatment and control groups were following parallel trends prior to the actual intervention.
 
 ## Quantitative Results
 
@@ -72,6 +76,8 @@ The analysis was performed on **7,591 observations** across King County, WA.
 
 ## Project Structure
 *   `src/download_data.py`: Automated data fetching script.
-*   `src/process_data.py`: Geospatial logic for Treatment/Control assignment.
-*   `src/analyze.py`: OLS regression using `statsmodels`.
-*   `outputs/`: Contains generated plots (`parallel_trends.png`) and full regression logs.
+*   `src/process_data.py`: Geospatial logic for Treatment/Control assignment (with full type hints).
+*   `src/analyze.py`: OLS regression, Placebo testing, and report generation.
+*   `outputs/`:
+    *   `analysis_report.md`: Comprehensive generated report with statistical tables.
+    *   `parallel_trends.png`: Visual verification of the parallel trends assumption.

@@ -3,8 +3,17 @@ import geopandas as gpd
 from shapely.geometry import Point
 import config
 from pathlib import Path
+from typing import Optional
 
-def process_geography():
+def process_geography() -> gpd.GeoDataFrame:
+    """
+    Loads TIGER/Line shapefiles, filters for King County, calculates centroids,
+    and assigns Treatment/Control status based on distance to transit stations.
+
+    Returns:
+        gpd.GeoDataFrame: A GeoDataFrame containing [GEOID, group, dist_to_station, geometry].
+                          Rows in the 'Buffer' zone are excluded.
+    """
     print("Processing Geography...")
     # Load Shapefile
     shp_path = config.DATA_RAW / "shapefiles" / f"tl_2020_53_bg.shp"
@@ -40,7 +49,7 @@ def process_geography():
     gdf['dist_to_station'] = gdf['centroid'].apply(get_min_dist)
     
     # Classify
-    def classify(dist):
+    def classify(dist: float) -> str:
         if dist <= config.TREATMENT_RADIUS_METERS:
             return 'Treatment'
         elif dist >= config.CONTROL_MIN_DIST_METERS:
@@ -56,7 +65,17 @@ def process_geography():
     print(f"Geography ready. Treatment: {sum(gdf_analysis['group']=='Treatment')}, Control: {sum(gdf_analysis['group']=='Control')}")
     return gdf_analysis
 
-def process_employment(geo_df):
+def process_employment(geo_df: gpd.GeoDataFrame) -> pd.DataFrame:
+    """
+    Loads LODES WAC data for multiple years, aggregates to Block Group level,
+    and merges with the geography dataframe.
+
+    Args:
+        geo_df (gpd.GeoDataFrame): The geography dataframe from process_geography().
+
+    Returns:
+        pd.DataFrame: A panel dataset ready for regression analysis.
+    """
     print("Processing Employment Data...")
     dfs = []
     
