@@ -1,29 +1,32 @@
-# Causal Impact Analysis: Public Transit & Employment Rates
+# Causal Impact Analysis: Public Transit & Local Economic Development
 
 ## Overview
-This project investigates the causal relationship between public transit infrastructure and local economic development. specifically employing a **Quasi-Experimental Design** to estimate the impact of the 2016 Seattle Link Light Rail extension (University Link) on employment density in surrounding neighborhoods.
+This project employs a **Quasi-Experimental Design** to estimate the causal impact of the 2016 Seattle Link Light Rail extension (University Link) on local employment density. By leveraging high-granularity US Census data and a **Difference-in-Differences (DiD)** framework, this analysis seeks to isolate the specific economic effects of transit infrastructure investment from broader regional growth trends.
 
-By leveraging **Difference-in-Differences (DiD)** estimation on high-granularity US Census data, this analysis seeks to determine if gaining access to a new transit station leads to a statistically significant increase in jobs compared to a control group.
+**Key Finding:** The analysis of 7,591 observations reveals that while the region experienced significant growth, the opening of new transit stations did not cause a statistically significant immediate increase in employment density within an 800m radius ($p = 0.157$) during the initial 2-year post-intervention period.
 
-## Key Quantitative Skills Demonstrated
-*   **Econometric Modeling:** Implementation of Difference-in-Differences (DiD) estimators to isolate causal effects from confounding variables.
-*   **Statistical Inference:** Hypothesis testing using Cluster-Robust Standard Errors to account for serial correlation and heteroskedasticity in panel data.
-*   **Robustness Testing:** Implementation of Placebo Tests (counterfactual validation) to confirm the internal validity of the DiD design.
-*   **Spatial Data Science:** Geographic manipulation using Coordinate Reference Systems (CRS) transformations, spatial joins, and geodesic buffering (800m vs 1600m radii) to define treatment/control groups.
-*   **Data Engineering:** Automated ETL pipeline construction to fetch, process, and aggregate multi-gigabyte census datasets (LODES) and TIGER/Line shapefiles.
+## Key Quantitative Skills
+This project demonstrates proficiency in the following analytical and technical areas:
+
+*   **Econometric Modeling:** Implementation of Difference-in-Differences (DiD) estimators to identify causal effects, controlling for time-invariant heterogeneity and common time shocks.
+*   **Statistical Inference:** Utilization of **Cluster-Robust Standard Errors** to account for serial correlation and heteroskedasticity inherent in panel data.
+*   **Spatial Data Science:** Precision geospatial analysis using **R (`sf`)**, including coordinate transformation to **EPSG:32148 (NAD83 / Washington North)** for accurate geodesic buffering (800m treatment vs. 1600m control radii).
+*   **Robustness Testing:** Execution of **Placebo Tests** (counterfactual validation) to verify the parallel trends assumption and ensure internal validity.
+*   **Data Engineering:** Construction of an automated ETL pipeline in **R** to fetch, process, and aggregate multi-gigabyte Census LODES and Shapefile datasets.
 
 ## Methodology
 
 ### 1. Research Design: Difference-in-Differences (DiD)
-To infer causality rather than simple correlation, I utilized a DiD framework. This approach compares the *change* in outcomes over time between a "Treatment Group" and a "Control Group," effectively differencing out:
-1.  **Time-Invariant Heterogeneity:** Characteristics of neighborhoods that don't change over time (e.g., proximity to downtown).
-2.  **Common Time Shocks:** Regional economic trends affecting all neighborhoods equally (e.g., a city-wide boom).
+To infer causality, I utilized a DiD framework which compares the *change* in outcomes over time between a "Treatment Group" (neighborhoods receiving a station) and a "Control Group" (similar neighborhoods further away). This approach effectively differences out:
+1.  **Time-Invariant Characteristics:** Fundamental differences between neighborhoods that stay constant (e.g., distance to downtown).
+2.  **Common Time Shocks:** Economic trends affecting the entire city equally (e.g., a regional tech boom).
 
 ### 2. Spatial Sampling & Variable Definition
-*   **Data Source:** US Census Bureau LODES (Workplace Area Characteristics) & TIGER/Line Shapefiles (2020 Vintage).
-*   **Treatment Group:** Census Block Groups with centroids within **800m (0.5 miles)** of the new Capitol Hill or University of Washington stations.
-*   **Control Group:** Census Block Groups situated **> 1600m (1 mile)** from the stations to avoid spillover effects, serving as the counterfactual.
-*   **Period:** 2014-2015 (Pre-Intervention) vs. 2016-2018 (Post-Intervention).
+*   **Data Source:** US Census Bureau LODES (Workplace Area Characteristics) & TIGER/Line Shapefiles.
+*   **Spatial Projection:** All geometries were projected to **EPSG:32148**, a State Plane coordinate system specifically optimized for Washington, ensuring meter-level accuracy for distance calculations.
+*   **Treatment Group:** Census Block Groups with centroids within **800m (approx. 0.5 miles)** of the new Capitol Hill or University of Washington stations.
+*   **Control Group:** Census Block Groups situated **> 1600m (approx. 1 mile)** from the stations to avoid spillover effects, serving as the counterfactual.
+*   **Study Period:** 2014-2015 (Pre-Intervention) vs. 2016-2018 (Post-Intervention).
 
 ### 3. Statistical Model
 I estimated the following linear regression model:
@@ -37,47 +40,42 @@ $$ Employment_{it} = \beta_0 + \beta_1(Treat_i) + \beta_2(Post_t) + \beta_3(Trea
 
 *Standard errors were clustered by Block Group ID to ensure robust inference.*
 
-### 4. Robustness Check: Placebo Test
-To validate that the DiD model is not picking up a pre-existing trend, I conducted a **Placebo Test** by shifting the intervention date to 2015 (a period when no stations opened). A successful model should show an insignificant interaction term for the placebo year, confirming that the treatment and control groups were following parallel trends prior to the actual intervention.
-
 ## Quantitative Results
 
 The analysis was performed on **7,591 observations** across King County, WA.
 
-| Variable | Coefficient | Std. Error | P-Value |
-| :--- | :--- | :--- | :--- |
-| **Intercept** | 797.48 | 78.87 | 0.000 |
-| **Treatment (Baseline Diff)** | -536.68 | 94.21 | 0.000 |
-| **Post (Time Trend)** | 62.92 | 15.75 | 0.000 |
-| **Treatment $\times$ Post ($\beta_3$)** | **-24.96** | **17.62** | **0.157** |
+| Variable | Coefficient | Std. Error | P-Value | Interpretation |
+| :--- | :--- | :--- | :--- | :--- |
+| **Intercept** | 797.48 | 78.87 | < 0.001 | Average baseline employment in the Control group. |
+| **Treatment (Baseline)** | -536.68 | 94.21 | < 0.001 | Station areas historically had significantly lower job density than the control average. |
+| **Post (Time Trend)** | 62.92 | 15.75 | < 0.001 | The entire region saw a significant growth of ~63 jobs per block group after 2016. |
+| **Treatment $\times$ Post ($\beta_3$)** | **-24.96** | **17.62** | **0.157** | **The Causal Impact.** |
 
-### Interpretation
-1.  **Regional Growth:** The `Post` coefficient (62.92) is positive and significant ($p < 0.001$), indicating that the control region saw an average increase of ~63 jobs per block group after 2016.
-2.  **Baseline Disparity:** The `Treatment` coefficient (-536.68) confirms that the station areas historically had lower employment density than the control group average.
-3.  **Causal Impact:** The interaction term ($eta_3$) is **-24.96** with a p-value of **0.157**.
-    *   **Conclusion:** We **fail to reject the null hypothesis**. There is no statistically significant evidence that the opening of the transit stations *caused* an increase in employment rates in the immediate 2-year post-opening period, controlling for regional trends. In fact, the point estimate suggests a slight (non-significant) lag compared to the regional average.
+### Interpretation of Findings
+1.  **No Significant Causal Effect:** The interaction term ($eta_3$) is **-24.96** with a p-value of **0.157**. We **fail to reject the null hypothesis** at the 5% significance level.
+2.  **Context:** While the region grew (Post coefficient > 0), the areas near the new stations did not experience an *additional* boost in employment relative to the control group in the immediate aftermath. In fact, the point estimate suggests a slight (statistically insignificant) lag.
+3.  **Robustness Check:** A **Placebo Test** simulating an intervention in 2015 yielded no significant interaction effect, confirming that the treatment and control groups followed parallel trends prior to the actual opening.
 
-## Technical Setup
+## Technical Implementation (R)
+
+The project is implemented as a reproducible R pipeline.
 
 ### Prerequisites
-*   Python 3.x
-*   `pip` packages: `pandas`, `geopandas`, `statsmodels`, `linearmodels`, `matplotlib`
+*   R (>= 4.0.0)
+*   Key Packages: `tidyverse`, `sf`, `fixest`, `knitr`
 
-### Reproduction Steps
+### Project Structure
+*   `src/run_pipeline.R`: **Master script** that executes the entire workflow.
+*   `src/process_data.R`: Handles complex geospatial joins and coordinate transformations.
+*   `src/analyze.R`: Performs the DiD regression using `fixest` (Fast Fixed-Effects Estimation) and generates outputs.
+
+### How to Run
 1.  **Install Dependencies:**
+    ```R
+    install.packages(c("tidyverse", "sf", "fixest", "knitr"))
+    ```
+2.  **Execute Pipeline:**
     ```bash
-    pip install -r requirements.txt
+    Rscript src/run_pipeline.R
     ```
-2.  **Run Pipeline (Download -> Process -> Analyze):**
-    ```powershell
-    .\run_pipeline.bat
-    ```
-    *This will automatically download ~200MB of raw Census data, process the geospatial joins, and output the regression table.*
-
-## Project Structure
-*   `src/download_data.py`: Automated data fetching script.
-*   `src/process_data.py`: Geospatial logic for Treatment/Control assignment (with full type hints).
-*   `src/analyze.py`: OLS regression, Placebo testing, and report generation.
-*   `outputs/`:
-    *   `analysis_report.md`: Comprehensive generated report with statistical tables.
-    *   `parallel_trends.png`: Visual verification of the parallel trends assumption.
+    *This command will automatically download raw Census data, process the geometry, run the statistical models, and generate the report in `outputs/`.*
